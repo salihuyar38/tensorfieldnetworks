@@ -1,3 +1,14 @@
-This is the repository to accompany the paper [Tensor field networks: Rotation- and translation-equivariant neural networks for 3D point clouds](https://arxiv.org/abs/1802.08219).
+This repository is based on the original implementation accompanying the paper
+Tensor Field Networks: Rotation- and Translation-Equivariant Neural Networks for 3D Point Clouds
+.
 
-For an actively developed framework for 3D Euclidean symmetry equivariant networks, please see the respository for Euclidean Neural Networks at [https://github.com/e3nn/e3nn](https://github.com/e3nn/e3nn).
+The codebase has been updated and extended to:
+
+Support modern Python and TensorFlow versions
+
+Improve usability and reproducibility
+
+Add enhanced visualization tools for better inspection of tensor features and equivariant behavior
+
+The original implementation can be found here:
+https://github.com/tensorfieldnetworks/tensorfieldnetworks
