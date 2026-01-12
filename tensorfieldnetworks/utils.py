@@ -22,14 +22,16 @@ def get_eijk():
 def norm_with_epsilon(input_tensor, axis=None, keep_dims=False):
     """
     Regularized norm
-
+    
     Args:
         input_tensor: tf.Tensor
-
+        axis: dimension to collapse
+        keep_dims: whether to keep reduced dimensions
     Returns:
         tf.Tensor normed over axis
     """
-    return tf.sqrt(tf.maximum(tf.reduce_sum(tf.square(input_tensor), axis=axis, keep_dims=keep_dims), EPSILON))
+    # Change keep_dims to keepdims for TensorFlow 2.x compatibility
+    return tf.sqrt(tf.maximum(tf.reduce_sum(tf.square(input_tensor), axis=axis, keepdims=keep_dims), EPSILON))
 
 
 def ssp(x):
@@ -42,7 +44,7 @@ def ssp(x):
     Returns:
         tf.Tensor of same shape as x 
    """
-    return tf.log(0.5 * tf.exp(x) + 0.5)
+    return tf.math.log(0.5 * tf.exp(x) + 0.5)
 
 
 def rotation_equivariant_nonlinearity(x, nonlin=ssp, biases_initializer=None):
@@ -58,15 +60,15 @@ def rotation_equivariant_nonlinearity(x, nonlin=ssp, biases_initializer=None):
         tf.Tensor of same shape as x with 3d rotation-equivariant nonlinearity applied.
     """
     if biases_initializer is None:
-        biases_initializer = tf.constant_initializer(0.)
+        biases_initializer = tf.compat.v1.constant_initializer(0.)
     shape = x.get_shape().as_list()
     channels = shape[-2]
     representation_index = shape[-1]
 
-    biases = tf.get_variable('biases',
-                             [channels],
-                             dtype=FLOAT_TYPE,
-                             initializer=biases_initializer)
+    biases = tf.compat.v1.get_variable('biases',
+                                       [channels],
+                                       dtype=FLOAT_TYPE,
+                                       initializer=biases_initializer)
 
     if representation_index == 1:
         return nonlin(x)
@@ -134,4 +136,3 @@ def random_rotation_matrix(numpy_random_state):
 
 def rotation_matrix(axis, theta):
     return scipy.linalg.expm(np.cross(np.eye(3), axis * theta))
-

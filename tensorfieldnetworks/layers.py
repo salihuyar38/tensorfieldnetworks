@@ -2,28 +2,28 @@ from math import sqrt
 import tensorflow as tf
 import numpy as np
 from tensorfieldnetworks import utils
-from utils import FLOAT_TYPE, EPSILON
+from .utils import FLOAT_TYPE, EPSILON
 
 # Layers for 3D rotation-equivariant network.
 
 
 def R(inputs, nonlin=tf.nn.relu, hidden_dim=None, output_dim=1, weights_initializer=None, biases_initializer=None):
-    with tf.variable_scope(None, "radial_function", values=[inputs]):
+    with tf.compat.v1.variable_scope(None, "radial_function", values=[inputs]):
         if weights_initializer is None:
-            weights_initializer = tf.contrib.layers.xavier_initializer()
+            weights_initializer = tf.compat.v1.glorot_uniform_initializer()
         if biases_initializer is None:
-            biases_initializer = tf.constant_initializer(0.)
+            biases_initializer = tf.compat.v1.constant_initializer(0.)
         input_dim = inputs.get_shape()[-1]
         if hidden_dim is None:
             hidden_dim = input_dim
 
-        w1 = tf.get_variable('weights1', [hidden_dim, input_dim], dtype=FLOAT_TYPE,
+        w1 = tf.compat.v1.get_variable('weights1', [hidden_dim, input_dim], dtype=FLOAT_TYPE,
                              initializer=weights_initializer)
-        b1 = tf.get_variable('biases1', [hidden_dim], dtype=FLOAT_TYPE, initializer=biases_initializer)
+        b1 = tf.compat.v1.get_variable('biases1', [hidden_dim], dtype=FLOAT_TYPE, initializer=biases_initializer)
 
-        w2 = tf.get_variable('weights2', [output_dim, hidden_dim], dtype=FLOAT_TYPE,
+        w2 = tf.compat.v1.get_variable('weights2', [output_dim, hidden_dim], dtype=FLOAT_TYPE,
                              initializer=weights_initializer)
-        b2 = tf.get_variable('biases2', [output_dim], dtype=FLOAT_TYPE, initializer=biases_initializer)
+        b2 = tf.compat.v1.get_variable('biases2', [output_dim], dtype=FLOAT_TYPE, initializer=biases_initializer)
 
         hidden_layer = nonlin(b1 + tf.tensordot(inputs, w1, [[2], [1]]))
         radial = b2 + tf.tensordot(hidden_layer, w2, [[2], [1]])
@@ -56,7 +56,7 @@ def Y_2(rij):
 def F_0(inputs, nonlin=tf.nn.relu, hidden_dim=None, output_dim=1,
         weights_initializer=None, biases_initializer=None):
     # [N, N, output_dim, 1]
-    with tf.variable_scope(None, "F_0", values=[inputs]):
+    with tf.compat.v1.variable_scope(None, "F_0", values=[inputs]):
         return tf.expand_dims(
             R(inputs, nonlin=nonlin, hidden_dim=hidden_dim, output_dim=output_dim,
               weights_initializer=weights_initializer, biases_initializer=biases_initializer),
@@ -65,7 +65,7 @@ def F_0(inputs, nonlin=tf.nn.relu, hidden_dim=None, output_dim=1,
 
 def F_1(inputs, rij, nonlin=tf.nn.relu, hidden_dim=None, output_dim=1,
         weights_initializer=None, biases_initializer=None):
-    with tf.variable_scope(None, "F_1", values=[inputs]):
+    with tf.compat.v1.variable_scope(None, "F_1", values=[inputs]):
         # [N, N, output_dim]
         radial = R(inputs, nonlin=nonlin, hidden_dim=hidden_dim, output_dim=output_dim,
                    weights_initializer=weights_initializer, biases_initializer=biases_initializer)
@@ -79,7 +79,7 @@ def F_1(inputs, rij, nonlin=tf.nn.relu, hidden_dim=None, output_dim=1,
 
 def F_2(inputs, rij, nonlin=tf.nn.relu, hidden_dim=None, output_dim=1,
         weights_initializer=None, biases_initializer=None):
-    with tf.variable_scope(None, "F_2", values=[inputs]):
+    with tf.compat.v1.variable_scope(None, "F_2", values=[inputs]):
         # [N, N, output_dim]
         radial = R(inputs, nonlin=nonlin, hidden_dim=hidden_dim, output_dim=output_dim,
                    weights_initializer=weights_initializer, biases_initializer=biases_initializer)
@@ -98,7 +98,7 @@ def filter_0(layer_input,
              output_dim=1,
              weights_initializer=None,
              biases_initializer=None):
-    with tf.variable_scope(None, "F0_to_L", values=[layer_input]):
+    with tf.compat.v1.variable_scope(None, "F0_to_L", values=[layer_input]):
         # [N, N, output_dim, 1]
         F_0_out = F_0(rbf_inputs, nonlin=nonlin, hidden_dim=hidden_dim, output_dim=output_dim,
                       weights_initializer=weights_initializer, biases_initializer=biases_initializer)
@@ -118,7 +118,7 @@ def filter_1_output_0(layer_input,
                       output_dim=1,
                       weights_initializer=None,
                       biases_initializer=None):
-    with tf.variable_scope(None, "F1_to_0", values=[layer_input]):
+    with tf.compat.v1.variable_scope(None, "F1_to_0", values=[layer_input]):
         # [N, N, output_dim, 3]
         F_1_out = F_1(rbf_inputs,
                       rij,
@@ -146,7 +146,7 @@ def filter_1_output_1(layer_input,
                       output_dim=1,
                       weights_initializer=None,
                       biases_initializer=None):
-    with tf.variable_scope(None, "F1_to_1", values=[layer_input]):
+    with tf.compat.v1.variable_scope(None, "F1_to_1", values=[layer_input]):
         # [N, N, output_dim, 3]
         F_1_out = F_1(rbf_inputs,
                       rij,
@@ -175,7 +175,7 @@ def filter_2_output_2(layer_input,
                       output_dim=1,
                       weights_initializer=None,
                       biases_initializer=None):
-    with tf.variable_scope(None, "F2_to_2", values=[layer_input]):
+    with tf.compat.v1.variable_scope(None, "F2_to_2", values=[layer_input]):
         # [N, N, output_dim, 3]
         F_2_out = F_2(rbf_inputs,
                       rij,
@@ -197,13 +197,13 @@ def self_interaction_layer_without_biases(inputs, output_dim, weights_initialize
     # input has shape [N, C, 2L+1]
     # input_dim is number of channels
     if weights_initializer is None:
-        weights_initializer = tf.orthogonal_initializer()
+        weights_initializer = tf.compat.v1.orthogonal_initializer()
     if biases_initializer is None:
-        biases_initializer = tf.constant_initializer(0.)
+        biases_initializer = tf.compat.v1.constant_initializer(0.)
 
-    with tf.variable_scope(None, "self_interaction_layer", values=[inputs]):
+    with tf.compat.v1.variable_scope(None, "self_interaction_layer", values=[inputs]):
         input_dim = inputs.get_shape().as_list()[-2]
-        w_si = tf.get_variable('weights', [output_dim, input_dim], dtype=FLOAT_TYPE,
+        w_si = tf.compat.v1.get_variable('weights', [output_dim, input_dim], dtype=FLOAT_TYPE,
                                initializer=weights_initializer)
         # [N, output_dim, 2l+1]
         return tf.transpose(tf.einsum('afi,gf->aig', inputs, w_si), perm=[0, 2, 1])
@@ -213,15 +213,15 @@ def self_interaction_layer_with_biases(inputs, output_dim, weights_initializer=N
     # input has shape [N, C, 2L+1]
     # input_dim is number of channels
     if weights_initializer is None:
-        weights_initializer = tf.orthogonal_initializer()
+        weights_initializer = tf.compat.v1.orthogonal_initializer()
     if biases_initializer is None:
-        biases_initializer = tf.constant_initializer(0.)
+        biases_initializer = tf.compat.v1.constant_initializer(0.)
 
-    with tf.variable_scope(None, "self_interaction_layer", values=[inputs]):
+    with tf.compat.v1.variable_scope(None, "self_interaction_layer", values=[inputs]):
         input_dim = inputs.get_shape().as_list()[-2]
-        w_si = tf.get_variable('weights', [output_dim, input_dim], dtype=FLOAT_TYPE,
+        w_si = tf.compat.v1.get_variable('weights', [output_dim, input_dim], dtype=FLOAT_TYPE,
                                initializer=weights_initializer)
-        b_si = tf.get_variable('biases', [output_dim], initializer=biases_initializer,
+        b_si = tf.compat.v1.get_variable('biases', [output_dim], initializer=biases_initializer,
                                dtype=FLOAT_TYPE)
 
         # [N, output_dim, 2l+1]
@@ -229,13 +229,13 @@ def self_interaction_layer_with_biases(inputs, output_dim, weights_initializer=N
 
 
 def convolution(input_tensor_list, rbf, unit_vectors, weights_initializer=None, biases_initializer=None):
-    with tf.variable_scope(None, "convolution", values=[input_tensor_list]):
+    with tf.compat.v1.variable_scope(None, "convolution", values=[input_tensor_list]):
         output_tensor_list = {0: [], 1: []}
         for key in input_tensor_list:
-            with tf.variable_scope(None, "L" + str(key), values=input_tensor_list[key]):
+            with tf.compat.v1.variable_scope(None, "L" + str(key), values=input_tensor_list[key]):
                 for i, tensor in enumerate(input_tensor_list[key]):
                     output_dim = tensor.get_shape().as_list()[-2]
-                    with tf.variable_scope(None, 'tensor_' + str(i), values=[tensor]):
+                    with tf.compat.v1.variable_scope(None, 'tensor_' + str(i), values=[tensor]):
                         tensor = tf.identity(tensor, name="in_tensor")
                         if True:
                             # L x 0 -> L
@@ -273,12 +273,12 @@ def convolution(input_tensor_list, rbf, unit_vectors, weights_initializer=None, 
 
 
 def self_interaction(input_tensor_list, output_dim, weights_initializer=None, biases_initializer=None):
-    with tf.variable_scope(None, "self_interaction", values=[input_tensor_list]):
+    with tf.compat.v1.variable_scope(None, "self_interaction", values=[input_tensor_list]):
         output_tensor_list = {0: [], 1: []}
         for key in input_tensor_list:
-            with tf.variable_scope(None, "L" + str(key), values=input_tensor_list[key]):
+            with tf.compat.v1.variable_scope(None, "L" + str(key), values=input_tensor_list[key]):
                 for i, tensor in enumerate(input_tensor_list[key]):
-                    with tf.variable_scope(None, 'tensor_' + str(i), values=[tensor]):
+                    with tf.compat.v1.variable_scope(None, 'tensor_' + str(i), values=[tensor]):
                         if key == 0:
                             tensor_out = self_interaction_layer_with_biases(tensor,
                                                                             output_dim,
@@ -295,12 +295,12 @@ def self_interaction(input_tensor_list, output_dim, weights_initializer=None, bi
 
 
 def nonlinearity(input_tensor_list, nonlin=tf.nn.elu, biases_initializer=None):
-    with tf.variable_scope(None, "nonlinearity", values=[input_tensor_list]):
+    with tf.compat.v1.variable_scope(None, "nonlinearity", values=[input_tensor_list]):
         output_tensor_list = {0: [], 1: []}
         for key in input_tensor_list:
-            with tf.variable_scope(None, "L" + str(key), values=input_tensor_list[key]):
+            with tf.compat.v1.variable_scope(None, "L" + str(key), values=input_tensor_list[key]):
                 for i, tensor in enumerate(input_tensor_list[key]):
-                    with tf.variable_scope(None, 'tensor_' + str(i), values=[tensor]):
+                    with tf.compat.v1.variable_scope(None, 'tensor_' + str(i), values=[tensor]):
                         if key == 0:
                             tensor_out = utils.rotation_equivariant_nonlinearity(tensor,
                                                                                  nonlin=nonlin,
@@ -317,7 +317,7 @@ def nonlinearity(input_tensor_list, nonlin=tf.nn.elu, biases_initializer=None):
 def concatenation(input_tensor_list):
     output_tensor_list = {0: [], 1: []}
     for key in input_tensor_list:
-        with tf.variable_scope(None, "L" + str(key), values=input_tensor_list[key]):
+        with tf.compat.v1.variable_scope(None, "L" + str(key), values=input_tensor_list[key]):
             # Concatenate along channel axis
             # [N, channels, M]
             output_tensor_list[key].append(tf.concat(input_tensor_list[key], axis=-2))
